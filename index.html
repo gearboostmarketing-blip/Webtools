@@ -1,37 +1,494 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Content-Style-Type" content="text/css">
-  <title></title>
-  <meta name="Generator" content="Cocoa HTML Writer">
-  <meta name="CocoaVersion" content="2685.4">
-  <style type="text/css">
-    body {background-color: #0e0e10}
-    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; text-align: center; font: 11.0px 'Helvetica Neue'; color: #9875d8; -webkit-text-stroke: #9875d8}
-    p.p3 {margin: 0.0px 136.0px 48.0px 136.0px; text-align: center; text-indent: -136.0px; font: 16.0px 'Helvetica Neue'; color: #75748f; -webkit-text-stroke: #75748f}
-    p.p4 {margin: 0.0px 0.0px 0.0px 0.0px; text-align: center; font: 12.0px 'Helvetica Neue'; color: #526078; -webkit-text-stroke: #526078}
-    p.p5 {margin: 0.0px 0.0px 0.0px 0.0px; text-align: center; font: 11.0px 'Helvetica Neue'; color: #8291a9; -webkit-text-stroke: #8291a9}
-    p.p6 {margin: 0.0px 0.0px 0.0px 0.0px; text-align: center; font: 16.0px 'Helvetica Neue'; color: #ffffff; -webkit-text-stroke: #ffffff; background-color: #49258c}
-    p.p7 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px 'Helvetica Neue'; color: #141418; -webkit-text-stroke: #141418; min-height: 15.0px}
-    span.s1 {font-kerning: none; background-color: rgba(73, 37, 140, 0.15)}
-    span.s2 {font-kerning: none; background-color: #141418}
-    span.s3 {font-kerning: none}
-    span.s4 {font-kerning: none; color: #9875d8; background-color: #141418; -webkit-text-stroke: 0px #9875d8}
-    span.s5 {font-kerning: none; background-color: #ffffff}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Email Sendability Checker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<style>
+  :root {
+    --navy: #1a1a1f;
+    --purple: #5c3a9e;
+    --purple-dark: #4a2d84;
+    --green: #16a34a;
+    --green-light: #dcfce7;
+    --red: #dc2626;
+    --red-light: #fee2e2;
+    --warn: #d97706;
+    --warn-light: #fef3c7;
+    --gray: #64748b;
+    --border: #e2e8f0;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'DM Sans', sans-serif; background: #111114; min-height: 100vh; color: var(--navy); }
+
+  .hero {
+    background: #1a1a1f; padding: 60px 24px 80px;
+    text-align: center; position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse 70% 50% at 50% 120%, rgba(92,58,158,0.35) 0%, transparent 70%);
+  }
+  .hero-badge {
+    display: inline-block; background: rgba(92,58,158,0.15);
+    border: 1px solid rgba(92,58,158,0.4); color: #a98de0;
+    font-size: 11px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase;
+    padding: 6px 16px; border-radius: 100px; margin-bottom: 24px; position: relative;
+  }
+  .hero h1 {
+    font-family: 'DM Serif Display', serif; font-size: clamp(36px, 6vw, 64px);
+    color: white; line-height: 1.1; position: relative; margin-bottom: 16px;
+  }
+  .hero h1 em { font-style: italic; color: #a98de0; }
+  .hero > p {
+    color: #8888a0; font-size: 16px; max-width: 480px;
+    margin: 0 auto 48px; line-height: 1.7; position: relative;
+  }
+
+  .form-card {
+    background: white; border-radius: 16px; padding: 32px;
+    max-width: 580px; margin: 0 auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35); position: relative;
+  }
+  .input-group { margin-bottom: 16px; }
+  .input-group label {
+    display: block; font-size: 12px; font-weight: 600;
+    letter-spacing: 1px; text-transform: uppercase; color: var(--gray); margin-bottom: 8px;
+  }
+  .input-group input {
+    width: 100%; padding: 14px 16px; border: 2px solid var(--border);
+    border-radius: 10px; font-family: 'DM Sans', sans-serif;
+    font-size: 16px; color: var(--navy); transition: border-color 0.2s; outline: none;
+  }
+  .input-group input:focus { border-color: var(--purple); }
+  .input-group input::placeholder { color: #b0bec5; }
+  .input-group input.error { border-color: var(--red); }
+  .dkim-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .hint { font-size: 11px; color: #94a3b8; margin-top: 5px; }
+
+  .setup-notice {
+    background: #fffbeb; border: 1px solid #fcd34d; border-radius: 10px;
+    padding: 14px 16px; font-size: 13px; color: #78350f; margin-bottom: 20px; line-height: 1.6;
+  }
+  .setup-notice strong { display: block; margin-bottom: 4px; font-size: 13px; }
+  .setup-notice a { color: #92400e; font-weight: 600; }
+  .setup-notice ol { padding-left: 18px; margin-top: 6px; }
+  .setup-notice ol li { margin-bottom: 3px; }
+  .setup-notice code { background: rgba(0,0,0,0.08); padding: 1px 5px; border-radius: 3px; font-size: 11px; }
+
+  .btn-check {
+    width: 100%; padding: 16px; background: var(--purple); color: white;
+    border: none; border-radius: 10px; font-family: 'DM Sans', sans-serif;
+    font-size: 16px; font-weight: 600; cursor: pointer;
+    transition: background 0.2s, transform 0.1s; margin-top: 8px; letter-spacing: 0.5px;
+  }
+  .btn-check:hover { background: var(--purple-dark); }
+  .btn-check:active { transform: scale(0.99); }
+  .btn-check:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .container { max-width: 780px; margin: -32px auto 60px; padding: 0 24px; }
+
+  #results { display: none; }
+
+  .email-sent {
+    background: #f0fdf4; border: 1px solid #86efac; border-radius: 10px;
+    padding: 14px 18px; font-size: 14px; color: #166534;
+    margin-bottom: 16px; display: none;
+  }
+  .email-sent.visible { display: block; }
+
+  .results-header {
+    background: white; border-radius: 16px; padding: 28px 32px; margin-bottom: 16px;
+    border-left: 5px solid var(--green); display: flex; align-items: center;
+    justify-content: space-between; gap: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+  .results-header.has-issues { border-left-color: var(--warn); }
+  .results-header h2 { font-family: 'DM Serif Display', serif; font-size: 22px; color: var(--navy); margin-bottom: 4px; }
+  .results-header p { font-size: 13px; color: var(--gray); }
+  .score-badge {
+    background: var(--green); color: white; font-size: 13px; font-weight: 600;
+    padding: 8px 18px; border-radius: 100px; white-space: nowrap;
+  }
+  .score-badge.partial { background: var(--purple); }
+
+  .check-card {
+    background: white; border-radius: 14px; padding: 24px 28px; margin-bottom: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; gap: 20px;
+    align-items: flex-start; opacity: 0; transform: translateY(12px);
+    animation: fadeUp 0.4s ease forwards;
+  }
+  @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+  .check-card:nth-child(1) { animation-delay: 0.05s; }
+  .check-card:nth-child(2) { animation-delay: 0.12s; }
+  .check-card:nth-child(3) { animation-delay: 0.19s; }
+
+  .status-icon {
+    width: 44px; height: 44px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;
+  }
+  .status-icon.pass { background: var(--green-light); }
+  .status-icon.fail { background: var(--red-light); }
+  .status-icon.warn { background: var(--warn-light); }
+
+  .check-info { flex: 1; }
+  .check-top { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; flex-wrap: wrap; }
+  .check-name { font-weight: 600; font-size: 16px; color: var(--navy); }
+  .check-pill { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 3px 10px; border-radius: 100px; }
+  .check-pill.pass { background: var(--green-light); color: var(--green); }
+  .check-pill.fail { background: var(--red-light); color: var(--red); }
+  .check-pill.warn { background: var(--warn-light); color: var(--warn); }
+  .check-title { font-size: 14px; color: var(--gray); margin-bottom: 8px; }
+  .check-desc { font-size: 14px; line-height: 1.6; color: #475569; }
+  .check-impact { margin-top: 10px; padding: 10px 14px; border-radius: 8px; font-size: 13px; line-height: 1.5; }
+  .check-impact.pass { background: var(--green-light); color: #166534; }
+  .check-impact.fail { background: var(--red-light); color: #991b1b; }
+  .check-impact.warn { background: var(--warn-light); color: #92400e; }
+
+  .report-actions { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
+  .btn-print {
+    padding: 13px 24px; border-radius: 10px; font-family: 'DM Sans', sans-serif;
+    font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+    border: 2px solid var(--purple); background: var(--purple); color: white;
+  }
+  .btn-print:hover { background: var(--purple-dark); border-color: var(--purple-dark); }
+  .btn-secondary {
+    padding: 13px 24px; border-radius: 10px; font-family: 'DM Sans', sans-serif;
+    font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+    border: 2px solid var(--border); background: white; color: var(--navy);
+  }
+  .btn-secondary:hover { border-color: var(--navy); }
+
+  #loading { display: none; text-align: center; padding: 60px 0; }
+  .spinner {
+    width: 48px; height: 48px; border: 4px solid #2a2a30;
+    border-top-color: var(--purple); border-radius: 50%;
+    animation: spin 0.8s linear infinite; margin: 0 auto 20px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #loading p { color: #8888a0; font-size: 15px; }
+  #loading .domain-label { font-weight: 600; color: white; }
+
+  .print-header {
+    display: none; text-align: center; padding-bottom: 24px;
+    margin-bottom: 24px; border-bottom: 3px solid var(--purple);
+  }
+  .print-header h1 { font-family: 'DM Serif Display', serif; font-size: 28px; }
+  .print-header p { color: var(--gray); font-size: 13px; margin-top: 6px; }
+
+  @media print {
+    body { background: white; }
+    .hero, .form-card, .report-actions, #loading, .email-sent, .setup-notice { display: none !important; }
+    .container { margin: 0; padding: 20px; max-width: 100%; }
+    #results { display: block !important; }
+    .check-card { box-shadow: none; border: 1px solid #e2e8f0; page-break-inside: avoid; }
+    .results-header { box-shadow: none; }
+    .print-header { display: block !important; }
+  }
+
+  @media (max-width: 600px) {
+    .dkim-row { grid-template-columns: 1fr; }
+    .results-header { flex-direction: column; align-items: flex-start; }
+    .check-card { flex-direction: column; }
+  }
+</style>
 </head>
 <body>
-<p class="p1"><span class="s1">FREE TOOL BY GEARBOOST MARKETING</span></p>
-<h1 style="margin: 0.0px 0.0px 16.0px 0.0px; text-align: center; font: 48.0px 'Helvetica Neue'; color: #ffffff; -webkit-text-stroke: #ffffff"><span class="s2">Is Your Email</span><span class="s3"><br>
-</span><span class="s4">Ready to Send?</span></h1>
-<p class="p3"><span class="s2">Check if your domain's email records are properly set up — and get a plain-English report delivered to your inbox.</span></p>
-<p class="p4"><span class="s5">DOMAIN TO CHECK</span></p>
-<p class="p4"><span class="s5">YOUR EMAIL (report sent here. By inputing your email, you automatically agree to recieving news, updates &amp; offers from GearBoost Marketing llc.)</span></p>
-<p class="p4"><span class="s5">DKIM SELECTOR (optional)</span></p>
-<p class="p5"><span class="s5">Leave blank to auto-detect</span></p>
-<p class="p4"><span class="s5">YOUR NAME (optional)</span></p>
-<p class="p6"><span class="s3">Run Email Check →</span></p>
-<p class="p7"><span class="s3"></span><br></p>
+
+<div class="hero">
+  <div class="hero-badge">Free Tool by GearBoost Marketing</div>
+  <h1>Is Your Email<br><em>Ready to Send?</em></h1>
+  <p>Check if your domain's email records are properly set up — and get a plain-English report delivered to your inbox.</p>
+
+  <div class="form-card">
+
+
+    <div class="input-group">
+      <label>Domain to Check</label>
+      <input type="text" id="domain" placeholder="yourcompany.com" />
+    </div>
+    <div class="input-group">
+      <label>Your Email <span style="font-weight:300;text-transform:none;">(report sent here)</span></label>
+      <input type="email" id="user-email" placeholder="you@yourcompany.com" />
+      <div class="hint">By entering your email you agree to receive your report and occasional news, updates &amp; offers from GearBoost Marketing LLC. Unsubscribe anytime.</div>
+    </div>
+    <div class="dkim-row">
+      <div class="input-group">
+        <label>DKIM Selector <span style="font-weight:300;text-transform:none;">(optional)</span></label>
+        <input type="text" id="selector" placeholder="google" />
+        <div class="hint">Leave blank to auto-detect</div>
+      </div>
+      <div class="input-group">
+        <label>Your Name <span style="font-weight:300;text-transform:none;">(optional)</span></label>
+        <input type="text" id="preparer" placeholder="e.g. Jane Smith" />
+      </div>
+    </div>
+    <button class="btn-check" onclick="runCheck()">Run Email Check →</button>
+  </div>
+</div>
+
+<div class="container">
+  <div id="loading">
+    <div class="spinner"></div>
+    <p>Checking records for <span class="domain-label" id="loading-domain"></span>…</p>
+  </div>
+
+  <div id="results">
+    <div class="print-header">
+      <h1>Email Sendability Report</h1>
+      <p id="print-meta"></p>
+    </div>
+
+    <div class="email-sent" id="email-sent-banner">
+      ✅ Report sent to <span id="sent-to-email"></span>
+    </div>
+
+    <div class="results-header" id="results-header">
+      <div>
+        <h2 id="results-title">Results for example.com</h2>
+        <p id="results-subtitle">Checked on Jan 1, 2026</p>
+      </div>
+      <div class="score-badge" id="score-badge">All Clear</div>
+    </div>
+
+    <div id="checks-container"></div>
+
+    <div class="report-actions">
+      <button class="btn-print" onclick="window.print()">🖨 Print / Save as PDF</button>
+      <button class="btn-secondary" onclick="resetForm()">← Check Another Domain</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// EMAILJS CONFIG — replace these 3 values after setup
+// ============================================================
+const EMAILJS_PUBLIC_KEY  = 'p3n-NcCzNfKp3qZFK';
+const EMAILJS_SERVICE_ID  = 'service_guq9mhq';
+const EMAILJS_TEMPLATE_ID = 'template_d3bahug';
+const NOTIFY_EMAIL        = 'gearboostmarketing@gmail.com';
+// ============================================================
+
+emailjs.init(EMAILJS_PUBLIC_KEY);
+
+const DOH = 'https://cloudflare-dns.com/dns-query';
+
+async function dnsQuery(name, type) {
+  try {
+    const res = await fetch(`${DOH}?name=${encodeURIComponent(name)}&type=${type}`, {
+      headers: { 'Accept': 'application/dns-json' }
+    });
+    const data = await res.json();
+    return data.Answer || [];
+  } catch (e) { return []; }
+}
+
+async function checkMX(domain) {
+  const records = await dnsQuery(domain, 'MX');
+  if (!records.length) return { status: 'fail', value: null };
+  const values = records.map(r => r.data.toLowerCase());
+  const isGoogle = values.some(v => v.includes('google') || v.includes('aspmx') || v.includes('smtp.google'));
+  const isMicrosoft = values.some(v => v.includes('outlook') || v.includes('microsoft') || v.includes('protection.outlook'));
+  const provider = isGoogle ? 'Google Workspace' : isMicrosoft ? 'Microsoft 365' : 'Custom mail server';
+  return { status: 'pass', value: values[0], provider };
+}
+
+async function checkSPF(domain) {
+  const records = await dnsQuery(domain, 'TXT');
+  const spf = records.find(r => r.data && r.data.toLowerCase().includes('v=spf1'));
+  if (!spf) return { status: 'fail', value: null };
+  const data = spf.data.replace(/"/g, '');
+  const hasAll = data.includes('~all') || data.includes('-all') || data.includes('?all');
+  return { status: hasAll ? 'pass' : 'warn', value: data };
+}
+
+async function checkDKIM(domain, selector) {
+  const selectors = selector ? [selector] : ['google', 'default', 'mail', 'smtp', 'dkim', 'k1', 'selector1', 'selector2', 's1', 's2'];
+  for (const sel of selectors) {
+    const records = await dnsQuery(`${sel}._domainkey.${domain}`, 'TXT');
+    if (records.length) {
+      const val = records[0].data.replace(/"/g, '');
+      if (val.includes('v=DKIM1') || val.includes('k=rsa') || val.includes('p=')) {
+        return { status: 'pass', value: val.substring(0, 60) + '…', selector: sel };
+      }
+    }
+  }
+  return { status: 'fail', value: null, selector: null };
+}
+
+function buildCard(check) {
+  const icons = { pass: '✓', fail: '✗', warn: '⚠' };
+  const labels = { pass: 'Configured', fail: 'Missing', warn: 'Needs Update' };
+  const card = document.createElement('div');
+  card.className = 'check-card';
+  card.innerHTML = `
+    <div class="status-icon ${check.status}">${icons[check.status]}</div>
+    <div class="check-info">
+      <div class="check-top">
+        <span class="check-name">${check.name}</span>
+        <span class="check-pill ${check.status}">${labels[check.status]}</span>
+      </div>
+      <div class="check-title">${check.title}</div>
+      <div class="check-desc">${check.desc}</div>
+      <div class="check-impact ${check.status}">${check.impact}</div>
+    </div>`;
+  return card;
+}
+
+function buildEmailHTML(domain, checks, passCount, now, preparer) {
+  const icons = { pass: '✅', fail: '❌', warn: '⚠️' };
+  const labels = { pass: 'Configured', fail: 'Missing', warn: 'Needs Update' };
+  const rows = checks.map(c => `
+    <tr>
+      <td style="padding:12px 16px;border-bottom:1px solid #eee;font-weight:600;">${icons[c.status]} ${c.name}</td>
+      <td style="padding:12px 16px;border-bottom:1px solid #eee;">${labels[c.status]}</td>
+      <td style="padding:12px 16px;border-bottom:1px solid #eee;font-size:13px;color:#475569;">${c.impact.replace(/^[✓✗⚠]\s/, '')}</td>
+    </tr>`).join('');
+
+  return `<div style="font-family:sans-serif;max-width:620px;margin:0 auto;">
+    <div style="background:#1a1a1f;padding:32px;border-radius:12px 12px 0 0;text-align:center;">
+      <h1 style="color:white;font-size:24px;margin:0 0 8px;">Email Sendability Report</h1>
+      <p style="color:#a98de0;margin:0;">${domain} &nbsp;·&nbsp; ${now}</p>
+    </div>
+    <div style="background:#f8fafc;padding:24px;border-radius:0 0 12px 12px;border:1px solid #e2e8f0;border-top:none;">
+      <p style="font-size:15px;margin:0 0 20px;color:#1a1a1f;"><strong>${passCount} of 3 checks passed</strong>${preparer ? ' &nbsp;·&nbsp; Prepared by ' + preparer : ''}</p>
+      <table style="width:100%;border-collapse:collapse;background:white;border-radius:8px;overflow:hidden;border:1px solid #e2e8f0;">
+        <thead><tr style="background:#5c3a9e;">
+          <th style="padding:12px 16px;color:white;text-align:left;font-size:13px;">Record</th>
+          <th style="padding:12px 16px;color:white;text-align:left;font-size:13px;">Status</th>
+          <th style="padding:12px 16px;color:white;text-align:left;font-size:13px;">What This Means</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <p style="font-size:12px;color:#94a3b8;margin:20px 0 0;text-align:center;">Powered by GearBoost Marketing &nbsp;·&nbsp; gearboostmarketing.com</p>
+    </div>
+  </div>`;
+}
+
+async function sendEmail(userEmail, domain, checks, passCount, now, preparer) {
+  if (EMAILJS_PUBLIC_KEY === 'YOUR_PUBLIC_KEY') return false;
+  try {
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      to_email: userEmail,
+      cc_email: NOTIFY_EMAIL,
+      domain: domain,
+      score: `${passCount} of 3 checks passed`,
+      checked_on: now,
+      preparer: preparer || 'GearBoost Marketing',
+      report_html: buildEmailHTML(domain, checks, passCount, now, preparer),
+    });
+    return true;
+  } catch (e) {
+    console.error('EmailJS error:', e);
+    return false;
+  }
+}
+
+async function runCheck() {
+  const domain = document.getElementById('domain').value.trim().replace(/^https?:\/\//, '').replace(/\/$/, '').toLowerCase();
+  const userEmail = document.getElementById('user-email').value.trim();
+  const selector = document.getElementById('selector').value.trim();
+  const preparer = document.getElementById('preparer').value.trim();
+
+  let valid = true;
+  if (!domain) { document.getElementById('domain').classList.add('error'); valid = false; }
+  else document.getElementById('domain').classList.remove('error');
+  if (!userEmail) { document.getElementById('user-email').classList.add('error'); valid = false; }
+  else document.getElementById('user-email').classList.remove('error');
+  if (!valid) return;
+
+  document.querySelector('.btn-check').disabled = true;
+  document.getElementById('loading-domain').textContent = domain;
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('results').style.display = 'none';
+  document.querySelector('.hero').style.paddingBottom = '40px';
+
+  const [mx, spf, dkim] = await Promise.all([
+    checkMX(domain), checkSPF(domain), checkDKIM(domain, selector)
+  ]);
+
+  const now = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+  const checks = [
+    {
+      status: mx.status, name: 'MX Record',
+      title: 'Controls where incoming email is delivered',
+      desc: mx.status === 'pass'
+        ? `Your domain's email is routing to <strong>${mx.provider}</strong>. Incoming messages will reach your inbox.`
+        : 'No MX record was found for your domain. This means your domain cannot receive email at all.',
+      impact: mx.status === 'pass'
+        ? `✓ Email sent to @${domain} will be delivered to your inbox.`
+        : `✗ Nobody can email you at @${domain}. This must be fixed before anything else.`
+    },
+    {
+      status: spf.status, name: 'SPF Record',
+      title: 'Authorizes which servers can send email on your behalf',
+      desc: spf.status === 'pass'
+        ? 'Your SPF record is in place and properly configured. Receiving mail servers can verify your emails are legitimate.'
+        : spf.status === 'warn'
+        ? 'An SPF record exists but may not be fully enforced. Check that it ends with <code>~all</code> or <code>-all</code>.'
+        : 'No SPF record found. Without it, your emails are more likely to be flagged as spam.',
+      impact: spf.status === 'pass'
+        ? '✓ Your emails are less likely to land in spam. Other servers trust your mail is authentic.'
+        : spf.status === 'warn'
+        ? '⚠ Partial protection. Your email may still be flagged by some servers.'
+        : '✗ Without SPF, your emails may go to spam or be rejected entirely.'
+    },
+    {
+      status: dkim.status, name: 'DKIM Signature',
+      title: 'Cryptographically signs every email you send',
+      desc: dkim.status === 'pass'
+        ? `DKIM is active using the <strong>${dkim.selector}</strong> selector. Every email is digitally signed, proving it hasn't been tampered with in transit.`
+        : 'No DKIM record was found. Without a digital signature, your emails lack a key trust signal that major providers like Microsoft Outlook look for.',
+      impact: dkim.status === 'pass'
+        ? '✓ Microsoft Outlook and other strict mail providers will trust your emails. Critical for deliverability.'
+        : '✗ Outlook and other providers may reject or spam-filter your emails. High priority to fix.'
+    },
+  ];
+
+  const passCount = checks.filter(c => c.status === 'pass').length;
+  const allPass = passCount === 3;
+  const someIssues = passCount < 2;
+
+  sendEmail(userEmail, domain, checks, passCount, now, preparer).then(sent => {
+    if (sent) {
+      document.getElementById('sent-to-email').textContent = userEmail;
+      document.getElementById('email-sent-banner').classList.add('visible');
+    }
+  });
+
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('results').style.display = 'block';
+
+  document.getElementById('results-header').className = 'results-header' + (someIssues ? ' has-issues' : '');
+  document.getElementById('results-title').textContent = `Email Report for ${domain}`;
+  document.getElementById('results-subtitle').textContent = `Checked on ${now}${preparer ? ' · ' + preparer : ''}`;
+
+  const badge = document.getElementById('score-badge');
+  badge.textContent = allPass ? 'All 3 Checks Passed' : `${passCount} of 3 Passed`;
+  badge.className = 'score-badge' + (allPass ? '' : ' partial');
+
+  document.getElementById('print-meta').textContent = `Domain: ${domain} · ${now}`;
+
+  const container = document.getElementById('checks-container');
+  container.innerHTML = '';
+  checks.forEach(c => container.appendChild(buildCard(c)));
+
+  document.querySelector('.btn-check').disabled = false;
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function resetForm() {
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('email-sent-banner').classList.remove('visible');
+  ['domain', 'user-email', 'selector', 'preparer'].forEach(id => document.getElementById(id).value = '');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+document.getElementById('domain').addEventListener('keypress', e => { if (e.key === 'Enter') runCheck(); });
+document.getElementById('user-email').addEventListener('keypress', e => { if (e.key === 'Enter') runCheck(); });
+</script>
 </body>
 </html>
